@@ -5,8 +5,8 @@ from discord.ext import commands
 import discord
 
 from utils.llm_runner import generate_response
-from utils.news_fetcher import fetch_all_sources  # 🗞 Pull latest news
-from utils.prompt_template import build_prompt     # 🔥 Custom Golazo-style prompt
+from utils.news_fetcher.filter import fetch_relevant_news  # ✅ Pull only filtered headlines
+from utils.prompt_template import build_prompt             # ✅ CBS Golazo-style personality prompt
 
 class AIAssist(commands.Cog):
     def __init__(self, bot):
@@ -18,26 +18,26 @@ class AIAssist(commands.Cog):
         await interaction.response.defer(thinking=True)
 
         try:
-            # 🗞 Fetch live football news headlines from multiple sources
-            news_snippets = fetch_all_sources()
+            # 🗞 1. Fetch news filtered to the user's topic
+            news_snippets = fetch_relevant_news(topic)
 
-            # 🧠 Build Golazo-style human prompt using personality + news
+            # 🧠 2. Generate human-style, intelligent prompt
             prompt = build_prompt(topic, news_snippets)
 
-            # 💡 Generate LLM-based discussion using your local model
+            # 🤖 3. Get response from local LLM
             content = generate_response(prompt)
 
-            # 📦 Format into a Discord embed
+            # 📦 4. Build the Discord embed
             embed = discord.Embed(
                 title=f"⚽ AI Topic: {topic}",
-                description=content[:2000],  # Discord's message limit
+                description=content[:2000],  # Discord message cap
                 color=discord.Color.green()
             )
 
-            # 📬 Send response to user via DM
+            # 📬 5. Send to user in DMs
             await interaction.user.send(embed=embed)
 
-            # ✅ Notify in channel
+            # ✅ 6. Confirm in the channel
             await interaction.followup.send("✅ Your football content has been sent via DM!", ephemeral=True)
 
         except Exception as e:
